@@ -1,207 +1,261 @@
-/* กำหนดตัวแปรสีและฟอนต์ */
+/* โทนสีและสไตล์แบบ Botly AI Dribbble */
 :root {
-    --primary-blue: #007AFF;
-    --light-blue: #E5F1FF;
-    --bg-color: #F2F2F7;
-    --text-main: #1C1C1E;
-    --text-muted: #8E8E93;
-    --success-green: #34C759;
-    --warning-orange: #FF9500;
-    --white: #FFFFFF;
+    --bg-main: #F4F6F9;
+    --card-bg: #FFFFFF;
+    --text-dark: #1E293B;
+    --text-gray: #64748B;
+    --primary-blue: #2563EB;
+    --primary-hover: #1D4ED8;
+    --soft-blue: #EFF6FF;
+    --warning-bg: #FFFBEB;
+    --warning-text: #D97706;
+    --success-bg: #ECFDF5;
+    --success-text: #059669;
+    --radius-xl: 28px;
+    --radius-lg: 20px;
+    --radius-md: 14px;
 }
 
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, sans-serif;
+    -webkit-tap-highlight-color: transparent;
 }
 
 body {
-    background-color: var(--bg-color);
-    color: var(--text-main);
-    padding-bottom: 90px; /* เว้นที่ให้ปุ่มด้านล่าง */
+    background-color: var(--bg-main);
+    color: var(--text-dark);
+    padding-bottom: 110px; /* เว้นที่ให้ Floating Bar */
 }
 
 /* Header */
-header {
-    background-color: var(--primary-blue);
-    color: var(--white);
-    padding: 20px;
-    text-align: center;
-    font-size: 1.2rem;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    border-bottom-left-radius: 20px;
-    border-bottom-right-radius: 20px;
-}
-
-/* Dashboard */
-.dashboard {
-    display: flex;
-    gap: 10px;
-    padding: 20px 15px;
-}
-
-.dash-card {
-    flex: 1;
-    border-radius: 16px;
-    padding: 15px 10px;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-    color: var(--white);
-    transition: transform 0.2s ease;
-}
-
-.dash-card:active {
-    transform: scale(0.95);
-}
-
-.dash-title { font-size: 0.9rem; font-weight: bold; margin-bottom: 5px; }
-.dash-number { font-size: 1.8rem; font-weight: 800; }
-
-.bg-blue { background-color: var(--primary-blue); }
-.bg-orange { background-color: var(--warning-orange); }
-.bg-green { background-color: var(--success-green); }
-
-/* Job List */
-.job-list {
-    padding: 0 15px;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.job-card {
-    background-color: var(--white);
-    border-radius: 16px;
-    padding: 18px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    animation: fadeIn 0.3s ease-out;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.job-header {
+.app-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
-    font-size: 1.1rem;
-    font-weight: bold;
+    padding: 30px 24px 20px;
 }
 
-.job-id { color: var(--primary-blue); }
-.job-type { background-color: var(--light-blue); color: var(--primary-blue); padding: 4px 10px; border-radius: 8px; font-size: 0.9rem;}
-.job-date { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 10px; }
-
-.status-badge {
-    display: inline-block;
-    padding: 5px 12px;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: bold;
-    margin-bottom: 15px;
+.greeting {
+    font-size: 0.95rem;
+    color: var(--text-gray);
+    margin-bottom: 4px;
 }
 
-.status-pending { background-color: #FFF4E5; color: var(--warning-orange); }
-.status-completed { background-color: #E8F8F0; color: var(--success-green); }
+.app-header h1 {
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+}
+
+.header-profile img {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* Dashboard Cards (Grid) */
+.dashboard {
+    padding: 0 24px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.dash-card {
+    background-color: var(--card-bg);
+    border-radius: var(--radius-xl);
+    padding: 24px;
+    box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05);
+    display: flex;
+}
+
+.card-total {
+    align-items: center;
+    gap: 20px;
+    background: linear-gradient(135deg, #2563EB, #60A5FA);
+    color: white;
+}
+
+.card-total .dash-title { color: rgba(255,255,255,0.8); font-size: 1rem; }
+.card-total .dash-number { font-size: 2.5rem; }
+.card-total .dash-icon { font-size: 2.5rem; background: rgba(255,255,255,0.2); padding: 15px; border-radius: 20px; }
+
+.dash-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.dash-grid-2 .dash-card {
+    flex-direction: column;
+    padding: 20px;
+    gap: 8px;
+}
+
+.dash-icon-small { font-size: 1.5rem; }
+.dash-grid-2 .dash-number { font-size: 2rem; font-weight: 800; line-height: 1; }
+.dash-grid-2 .dash-title { font-size: 0.9rem; color: var(--text-gray); font-weight: 500; }
+
+/* Job List Section */
+.list-section { padding: 0 24px; }
+.section-header h2 { font-size: 1.2rem; font-weight: 700; margin-bottom: 16px; }
+
+.job-list { display: flex; flex-direction: column; gap: 16px; }
+
+.job-card {
+    background-color: var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    box-shadow: 0 8px 24px -10px rgba(0,0,0,0.04);
+    border: 1px solid rgba(0,0,0,0.02);
+    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.job-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.job-id { font-size: 1.1rem; font-weight: 800; color: var(--text-dark); }
+.job-date { font-size: 0.85rem; color: var(--text-gray); }
+
+.badge {
+    padding: 6px 12px;
+    border-radius: 100px;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.badge-type { background-color: var(--soft-blue); color: var(--primary-blue); margin-bottom: 16px; display: inline-block; }
+.badge-pending { background-color: var(--warning-bg); color: var(--warning-text); }
+.badge-completed { background-color: var(--success-bg); color: var(--success-text); }
 
 /* Buttons */
-.btn-finish {
-    width: 100%;
-    background-color: var(--success-green);
-    color: var(--white);
+.btn-pill {
+    border-radius: 100px;
     border: none;
-    padding: 15px;
-    border-radius: 12px;
-    font-size: 1.1rem;
-    font-weight: bold;
+    font-weight: 700;
+    font-size: 1.05rem;
+    cursor: pointer;
+    transition: transform 0.2s, opacity 0.2s;
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 5px;
+    gap: 8px;
 }
 
-.btn-finish:active { opacity: 0.8; transform: scale(0.98); }
+.btn-pill:active { transform: scale(0.96); }
 
-/* Bottom Bar */
+.btn-finish {
+    width: 100%;
+    padding: 14px;
+    background-color: var(--primary-blue);
+    color: white;
+    margin-top: 16px;
+    border-radius: var(--radius-md);
+    border: none;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.btn-finish:active { background-color: var(--primary-hover); }
+
+/* Floating Bottom Bar */
 .bottom-bar {
     position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    padding: 15px;
-    background-color: var(--white);
-    box-shadow: 0 -4px 15px rgba(0,0,0,0.05);
-    border-top-left-radius: 20px;
-    border-top-right-radius: 20px;
+    bottom: 24px;
+    left: 24px;
+    right: 24px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    padding: 10px;
+    border-radius: 100px;
+    box-shadow: 0 10px 40px rgba(37, 99, 235, 0.15);
+    border: 1px solid rgba(255,255,255,0.5);
+    z-index: 100;
 }
 
-.btn-large {
+.bottom-bar .btn-primary {
     width: 100%;
-    padding: 18px;
-    font-size: 1.2rem;
-    border-radius: 14px;
-    font-weight: bold;
+    padding: 16px;
+    background: var(--primary-blue);
+    color: white;
+    font-size: 1.1rem;
 }
 
-.btn-primary { background-color: var(--primary-blue); color: var(--white); border: none; }
-.btn-primary:active { background-color: #005ecb; }
-.btn-secondary { background-color: #E5E5EA; color: var(--text-main); border: none; }
-
-/* Modal (Popup) */
+/* Modal (Bottom Sheet Style) */
 .modal {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
-    background-color: rgba(0,0,0,0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
     z-index: 1000;
-    opacity: 1;
-    transition: opacity 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
 }
 
-.modal.hidden {
-    opacity: 0;
-    pointer-events: none;
+.modal.hidden { pointer-events: none; }
+
+.modal-backdrop {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(15, 23, 42, 0.4);
+    opacity: 1;
+    transition: opacity 0.3s;
 }
+
+.modal.hidden .modal-backdrop { opacity: 0; }
 
 .modal-content {
-    background-color: var(--white);
-    width: 90%;
-    max-width: 400px;
-    border-radius: 20px;
-    padding: 25px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-    transform: translateY(0);
-    transition: transform 0.3s ease;
-}
-
-.modal.hidden .modal-content {
-    transform: translateY(20px);
-}
-
-.modal-content h2 { margin-bottom: 20px; text-align: center; color: var(--primary-blue); }
-
-.form-group label { display: block; font-size: 1.1rem; margin-bottom: 10px; font-weight: bold; }
-
-.large-input {
+    background: var(--card-bg);
     width: 100%;
-    padding: 15px;
-    font-size: 1.2rem;
-    border: 2px solid var(--light-blue);
-    border-radius: 12px;
-    background-color: #F9F9F9;
-    margin-bottom: 25px;
-    color: var(--text-main);
-    outline: none;
+    border-top-left-radius: var(--radius-xl);
+    border-top-right-radius: var(--radius-xl);
+    padding: 30px 24px 40px;
+    position: relative;
+    transform: translateY(0);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 10;
 }
 
-.modal-actions { display: flex; gap: 10px; }
-.modal-actions button { flex: 1; padding: 15px; font-size: 1.1rem; border-radius: 12px; font-weight: bold; }
+.modal.hidden .modal-content { transform: translateY(100%); }
+
+.modal-drag-indicator {
+    width: 40px; height: 5px;
+    background: #E2E8F0;
+    border-radius: 10px;
+    margin: 0 auto 20px;
+}
+
+.modal h2 { font-size: 1.4rem; color: var(--text-dark); margin-bottom: 5px; }
+.modal-subtitle { color: var(--text-gray); font-size: 0.95rem; margin-bottom: 24px; }
+
+.modern-input {
+    width: 100%;
+    padding: 16px;
+    font-size: 1.1rem;
+    border: 2px solid #E2E8F0;
+    border-radius: var(--radius-md);
+    background: #F8FAFC;
+    color: var(--text-dark);
+    margin-bottom: 24px;
+    outline: none;
+    appearance: none; /* เอาลูกศรเดิมออกเพื่อความสวยงาม */
+}
+
+.modern-input:focus { border-color: var(--primary-blue); }
+
+.modal-actions { display: flex; gap: 12px; }
+.modal-actions button { flex: 1; padding: 16px; }
+.btn-secondary { background: #F1F5F9; color: var(--text-dark); }

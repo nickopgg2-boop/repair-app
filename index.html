@@ -5,71 +5,91 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ระบบแจ้งซ่อมมือถือ</title>
     <link rel="stylesheet" href="style.css">
-<<link rel="stylesheet" href="style.css">
-    
     <link rel="manifest" href="manifest.json">
-    
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="apple-mobile-web-app-title" content="แจ้งซ่อม">
-    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
-    <header>
-        <h1>ระบบแจ้งซ่อม</h1>
+    <!-- Header แบบใหม่ -->
+    <header class="app-header">
+        <div class="header-text">
+            <p class="greeting">สวัสดี, ยินดีต้อนรับ 👋</p>
+            <h1>ภาพรวมงานซ่อม</h1>
+        </div>
+        <div class="header-profile">
+            <img src="https://ui-avatars.com/api/?name=Admin&background=0D8ABC&color=fff" alt="Profile">
+        </div>
     </header>
 
     <main>
+        <!-- Dashboard สไตล์ Botly (Grid Layout) -->
         <section class="dashboard">
-            <div class="dash-card bg-blue">
-                <span class="dash-title">📥 งานเข้า</span>
-                <span class="dash-number" id="count-total">0</span>
+            <div class="dash-card card-total">
+                <div class="dash-icon">📥</div>
+                <div class="dash-info">
+                    <span class="dash-title">งานเข้าทั้งหมด</span>
+                    <span class="dash-number" id="count-total">0</span>
+                </div>
             </div>
-            <div class="dash-card bg-orange">
-                <span class="dash-title">⏳ งานค้าง</span>
-                <span class="dash-number" id="count-pending">0</span>
-            </div>
-            <div class="dash-card bg-green">
-                <span class="dash-title">✅ งานเสร็จ</span>
-                <span class="dash-number" id="count-completed">0</span>
+            <div class="dash-grid-2">
+                <div class="dash-card card-pending">
+                    <span class="dash-icon-small">⏳</span>
+                    <span class="dash-number" id="count-pending">0</span>
+                    <span class="dash-title">งานค้าง</span>
+                </div>
+                <div class="dash-card card-completed">
+                    <span class="dash-icon-small">✅</span>
+                    <span class="dash-number" id="count-completed">0</span>
+                    <span class="dash-title">เสร็จสิ้น</span>
+                </div>
             </div>
         </section>
 
-        <section id="job-list" class="job-list">
-            </section>
+        <!-- Job List -->
+        <section class="list-section">
+            <div class="section-header">
+                <h2>รายการใบงานล่าสุด</h2>
+            </div>
+            <div id="job-list" class="job-list">
+                <!-- รายการจะถูกสร้างที่นี่ -->
+            </div>
+        </section>
     </main>
 
+    <!-- Floating Bottom Bar (Glassmorphism) -->
     <div class="bottom-bar">
-        <button id="btn-open-modal" class="btn-primary btn-large">➕ เพิ่มใบงาน</button>
+        <button id="btn-open-modal" class="btn-primary btn-pill">
+            <span class="icon">➕</span> สร้างใบงานใหม่
+        </button>
     </div>
 
+    <!-- Popup Modal สไตล์โมเดิร์น -->
     <div id="modal" class="modal hidden">
+        <div class="modal-backdrop" id="modal-backdrop"></div>
         <div class="modal-content">
+            <div class="modal-drag-indicator"></div>
             <h2>เพิ่มใบงานใหม่</h2>
+            <p class="modal-subtitle">กรุณาเลือกประเภทของงานที่ต้องการแจ้งซ่อม</p>
+            
             <div class="form-group">
-                <label for="job-type">เลือกประเภทงาน:</label>
-                <select id="job-type" class="large-input">
-                    <option value="S-D">S-D</option>
-                    <option value="L-D">L-D</option>
-                    <option value="P-D">P-D</option>
+                <select id="job-type" class="modern-input">
+                    <option value="S-D">🛠️ S-D (Standard)</option>
+                    <option value="L-D">⚡ L-D (Level)</option>
+                    <option value="P-D">🔥 P-D (Priority)</option>
                 </select>
             </div>
             <div class="modal-actions">
-                <button id="btn-close-modal" class="btn-secondary">ยกเลิก</button>
-                <button id="btn-save-job" class="btn-primary">บันทึก</button>
+                <button id="btn-close-modal" class="btn-secondary btn-pill">ยกเลิก</button>
+                <button id="btn-save-job" class="btn-primary btn-pill">บันทึกงาน</button>
             </div>
         </div>
     </div>
 
     <script src="script.js"></script>
-    <script src="script.js"></script>
-
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(reg => console.log('Service Worker Registered'))
-                    .catch(err => console.error('Service Worker Error:', err));
+                navigator.serviceWorker.register('sw.js');
             });
         }
     </script>
