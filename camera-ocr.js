@@ -672,7 +672,7 @@ function normalizeOcrText(text) {
         .trim();
 }
 
-export function parseSummitTemporaryDieMaintenanceForm(ocrText, ocrWords = []) {
+function parseSummitTemporaryDieMaintenanceForm(ocrText, ocrWords = []) {
     const layoutLines = buildLayoutLinesFromWords(ocrWords);
     const lines = layoutLines.length ? layoutLines.map(line => line.text) : ocrText.split('\n').map(line => line.trim()).filter(Boolean);
     const normalizedText = normalizeForSearch(ocrText);
