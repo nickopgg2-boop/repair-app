@@ -83,24 +83,59 @@
     <input id="camera-input" class="visually-hidden" type="file" accept="image/*" capture="environment">
     <input id="gallery-input" class="visually-hidden" type="file" accept="image/*">
 
-    <!-- Popup Modal สไตล์โมเดิร์น -->
+    <!-- Manual Job Modal -->
     <div id="modal" class="modal hidden">
         <div class="modal-backdrop" id="modal-backdrop"></div>
-        <div class="modal-content">
+        <div class="modal-content ocr-modal-content">
             <div class="modal-drag-indicator"></div>
             <h2>เพิ่มใบงานใหม่</h2>
-            <p class="modal-subtitle">กรุณาเลือกประเภทของงานที่ต้องการแจ้งซ่อม</p>
-            
-            <div class="form-group">
-                <select id="job-type" class="modern-input">
-                    <option value="S-D">🛠️ S-D (Standard)</option>
-                    <option value="L-D">⚡ L-D (Level)</option>
-                    <option value="P-D">🔥 P-D (Priority)</option>
-                </select>
+            <p class="modal-subtitle">กรอกข้อมูลให้เหมือนใบแจ้งซ่อมแม่พิมพ์ชั่วคราว</p>
+
+            <div id="manual-form-error" class="ocr-error hidden"></div>
+
+            <div class="auto-fill-form" id="manual-job-form">
+                <label>PART NAME
+                    <input id="manual-partName" class="modern-input parsed-input" data-field="partName" autocomplete="off" placeholder="เช่น BRKT SUPT TO R/GRL">
+                </label>
+                <label>PART NO
+                    <input id="manual-partNumber" class="modern-input parsed-input" data-field="partNumber" autocomplete="off" placeholder="เช่น 8983762650-1">
+                </label>
+                <label>MODEL
+                    <input id="manual-model" class="modern-input parsed-input" data-field="model" autocomplete="off" placeholder="เช่น TMCT/RJ08">
+                </label>
+                <label>ปัญหา / สาเหตุ
+                    <textarea id="manual-problem" class="modern-input parsed-input parsed-textarea" data-field="problem" placeholder="ระบุปัญหา/สาเหตุที่ต้องแจ้งซ่อม"></textarea>
+                </label>
+                <label>Stock
+                    <input id="manual-stock" class="modern-input parsed-input" data-field="stock" autocomplete="off" inputmode="numeric">
+                </label>
+                <label>ประเภทแม่พิมพ์
+                    <select id="job-type" class="modern-input parsed-input" data-field="priority">
+                        <option value="P-D">P-D — Progressive</option>
+                        <option value="L-D">L-D — Big Stamping</option>
+                        <option value="S-D">S-D — Small Stamping</option>
+                    </select>
+                </label>
+                <label>PRD
+                    <input id="manual-prd" class="modern-input parsed-input" data-field="prd" autocomplete="off">
+                </label>
+                <label>QA
+                    <input id="manual-qa" class="modern-input parsed-input" data-field="qa" autocomplete="off">
+                </label>
+                <label>PCC
+                    <input id="manual-pcc" class="modern-input parsed-input" data-field="pcc" autocomplete="off">
+                </label>
+                <label>Cover D
+                    <input id="manual-coverD" class="modern-input parsed-input" data-field="coverD" autocomplete="off" inputmode="numeric">
+                </label>
+                <label>FG
+                    <input id="manual-fg" class="modern-input parsed-input" data-field="fg" autocomplete="off" inputmode="numeric">
+                </label>
             </div>
-            <div class="modal-actions">
-                <button id="btn-close-modal" class="btn-secondary btn-pill">ยกเลิก</button>
-                <button id="btn-save-job" class="btn-primary btn-pill">บันทึกงาน</button>
+
+            <div class="modal-actions ocr-actions">
+                <button id="btn-close-modal" class="btn-secondary btn-pill" type="button">ยกเลิก</button>
+                <button id="btn-save-job" class="btn-primary btn-pill" type="button">สร้างใบงาน</button>
             </div>
         </div>
     </div>
@@ -173,9 +208,9 @@
                     <label>Priority
                         <select id="parsed-priority" class="modern-input parsed-input" data-field="priority">
                             <option value="">ไม่พบข้อมูล</option>
-                            <option value="S-D">S-D</option>
-                            <option value="L-D">L-D</option>
-                            <option value="P-D">P-D</option>
+                            <option value="P-D">P-D — Progressive</option>
+                            <option value="L-D">L-D — Big Stamping</option>
+                            <option value="S-D">S-D — Small Stamping</option>
                         </select>
                         <span id="confidence-priority" class="confidence-chip"></span>
                     </label>

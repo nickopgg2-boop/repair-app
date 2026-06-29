@@ -16,6 +16,17 @@ const btnCloseModal = document.getElementById('btn-close-modal');
 const modalBackdrop = document.getElementById('modal-backdrop');
 const btnSaveJob = document.getElementById('btn-save-job');
 const jobTypeInput = document.getElementById('job-type');
+const manualFormError = document.getElementById('manual-form-error');
+
+const MANUAL_FIELD_ORDER = [
+    'partName', 'partNumber', 'model', 'problem', 'stock', 'prd', 'qa', 'pcc', 'coverD', 'fg'
+];
+
+const JOB_TYPE_LABELS = {
+    'P-D': 'P-D · Progressive',
+    'L-D': 'L-D · Big Stamping',
+    'S-D': 'S-D · Small Stamping'
+};
 
 const btnCreateFromPhoto = document.getElementById('btn-create-from-photo');
 const cameraInput = document.getElementById('camera-input');
@@ -108,13 +119,19 @@ function renderJobs() {
         const card = document.createElement('div');
         card.className = 'job-card';
         const parsed = job.parsedData || {};
-        const cameraMeta = job.createdFromCamera ? `
-            <div class="camera-job-chip">📷 งานจากการถ่ายรูป · Confidence ${Math.round(Number(job.confidence?.overall || 0))}%</div>
+        const hasParsedData = ['partNumber', 'partName', 'model', 'problem', 'stock', 'prd', 'qa'].some(field => parsed[field]);
+        const sourceChip = job.createdFromCamera
+            ? `<div class="camera-job-chip">📷 งานจากการถ่ายรูป · Confidence ${Math.round(Number(job.confidence?.overall || 0))}%</div>`
+            : (hasParsedData ? `<div class="camera-job-chip">📝 กรอกใบงานเอง</div>` : '');
+        const jobDetail = hasParsedData ? `
             <div class="job-camera-detail">
                 ${parsed.partNumber ? `<span>PART NO: <b>${escapeHtml(parsed.partNumber)}</b></span>` : ''}
                 ${parsed.partName ? `<span>PART NAME: <b>${escapeHtml(parsed.partName)}</b></span>` : ''}
                 ${parsed.model ? `<span>MODEL: <b>${escapeHtml(parsed.model)}</b></span>` : ''}
                 ${parsed.problem ? `<span>ปัญหา: <b>${escapeHtml(truncateText(parsed.problem, 80))}</b></span>` : ''}
+                ${parsed.stock ? `<span>Stock: <b>${escapeHtml(parsed.stock)}</b></span>` : ''}
+                ${parsed.prd ? `<span>PRD: <b>${escapeHtml(parsed.prd)}</b></span>` : ''}
+                ${parsed.qa ? `<span>QA: <b>${escapeHtml(parsed.qa)}</b></span>` : ''}
             </div>
         ` : '';
 
@@ -125,8 +142,9 @@ function renderJobs() {
                     ${isPending ? '⏳ รอดำเนินการ' : '✅ เสร็จสิ้น'}
                 </span>
             </div>
-            <div class="badge badge-type">ประเภท: ${escapeHtml(job.type)}</div>
-            ${cameraMeta}
+            <div class="badge badge-type">ประเภท: ${escapeHtml(formatJobTypeLabel(job.type))}</div>
+            ${sourceChip}
+            ${jobDetail}
             <div class="job-date">📅 อัปเดตเมื่อ: ${escapeHtml(job.lastEdit || job.date)}</div>
             
             ${isPending ? `<button class="btn-finish" onclick="completeJob('${escapeAttribute(job.id)}')">ทำเครื่องหมายว่าเสร็จสิ้น</button>` : ''}
@@ -136,14 +154,21 @@ function renderJobs() {
 }
 
 function initManualJobModal() {
-    btnOpenModal.addEventListener('click', () => modal.classList.remove('hidden'));
+    btnOpenModal.addEventListener('click', () => {
+        hideManualFormError();
+        modal.classList.remove('hidden');
+        document.getElementById('manual-partName')?.focus();
+    });
     btnCloseModal.addEventListener('click', () => modal.classList.add('hidden'));
     modalBackdrop.addEventListener('click', () => modal.classList.add('hidden'));
 
+    attachManualInputFilters();
+
     btnSaveJob.addEventListener('click', () => {
-        createManualJob(jobTypeInput.value);
+        const created = createManualJob();
+        if (!created) return;
         modal.classList.add('hidden');
-        jobTypeInput.value = 'S-D';
+        resetManualJobForm();
     });
 }
 
@@ -280,8 +305,19 @@ async function ensureCameraFeature() {
     return cameraFeaturePromise;
 }
 
-function createManualJob(type) {
+function createManualJob() {
     const now = new Date();
+    const parsedData = collectManualJobFormData();
+    const errors = validateManualJobForm(parsedData);
+
+    if (errors.length) {
+        showManualFormError(errors.join('<br>'));
+        return false;
+    }
+
+    const type = normalizeJobType(parsedData.priority);
+    const confidence = buildManualConfidence(parsedData);
+
     jobs.push({
         id: generateJobId(),
         type,
@@ -291,15 +327,138 @@ function createManualJob(type) {
         imageBase64: null,
         processedImageBase64: null,
         ocrText: '',
-        parsedData: {},
-        confidence: {},
+        parsedData: {
+            ...parsedData,
+            priority: type
+        },
+        confidence,
         scanTime: null,
         lastEdit: formatThaiDate(now)
     });
 
+    hideManualFormError();
     saveData();
     renderDashboard();
     renderJobs();
+    return true;
+}
+
+function collectManualJobFormData() {
+    const data = {};
+    MANUAL_FIELD_ORDER.forEach(field => {
+        const input = document.getElementById(`manual-${field}`);
+        data[field] = normalizeManualFieldValue(field, input?.value || '');
+    });
+    data.priority = normalizeJobType(jobTypeInput?.value || 'P-D');
+    return data;
+}
+
+function normalizeManualFieldValue(field, value) {
+    const text = String(value || '').trim().replace(/\s{2,}/g, ' ');
+    if (field === 'partNumber') {
+        return text
+            .toUpperCase()
+            .replace(/[–—]/g, '-')
+            .replace(/[Oo]/g, '0')
+            .replace(/[Il]/g, '1')
+            .replace(/\s+/g, '');
+    }
+    if (['partName', 'model'].includes(field)) {
+        return text.toUpperCase();
+    }
+    if (['stock', 'coverD', 'fg'].includes(field)) {
+        return text.replace(/[^\d.]/g, '');
+    }
+    return text;
+}
+
+function validateManualJobForm(parsedData) {
+    const errors = [];
+    const requiredFields = [
+        ['partName', 'กรุณากรอก PART NAME'],
+        ['partNumber', 'กรุณากรอก PART NO'],
+        ['model', 'กรุณากรอก MODEL'],
+        ['problem', 'กรุณากรอกปัญหา / สาเหตุ']
+    ];
+
+    requiredFields.forEach(([field, message]) => {
+        const input = document.getElementById(`manual-${field}`);
+        const isMissing = !parsedData[field];
+        input?.classList.toggle('low-confidence', isMissing);
+        if (isMissing) errors.push(message);
+    });
+
+    const partNumberInput = document.getElementById('manual-partNumber');
+    const isBadPartNumber = Boolean(parsedData.partNumber) && !/^[A-Z0-9-]{4,}$/.test(parsedData.partNumber);
+    partNumberInput?.classList.toggle('low-confidence', isBadPartNumber);
+    if (isBadPartNumber) {
+        errors.push('PART NO ใช้ได้เฉพาะตัวอักษรอังกฤษ ตัวเลข และขีดกลาง');
+    }
+
+    return errors;
+}
+
+function buildManualConfidence(parsedData) {
+    const confidence = {};
+    const fields = [...MANUAL_FIELD_ORDER, 'priority'];
+    fields.forEach(field => {
+        confidence[field] = parsedData[field] ? 100 : 0;
+    });
+    const coreFields = ['partName', 'partNumber', 'model', 'problem', 'priority'];
+    confidence.overall = Math.round(coreFields.reduce((sum, field) => sum + Number(confidence[field] || 0), 0) / coreFields.length);
+    return confidence;
+}
+
+function attachManualInputFilters() {
+    MANUAL_FIELD_ORDER.forEach(field => {
+        const input = document.getElementById(`manual-${field}`);
+        if (!input) return;
+        input.addEventListener('blur', () => {
+            input.value = normalizeManualFieldValue(field, input.value);
+        });
+        input.addEventListener('input', () => {
+            input.classList.remove('low-confidence');
+            hideManualFormError();
+        });
+    });
+
+    jobTypeInput?.addEventListener('change', () => {
+        jobTypeInput.value = normalizeJobType(jobTypeInput.value);
+    });
+}
+
+function resetManualJobForm() {
+    MANUAL_FIELD_ORDER.forEach(field => {
+        const input = document.getElementById(`manual-${field}`);
+        if (!input) return;
+        input.value = '';
+        input.classList.remove('low-confidence');
+    });
+    if (jobTypeInput) jobTypeInput.value = 'P-D';
+    hideManualFormError();
+}
+
+function showManualFormError(message) {
+    if (!manualFormError) return;
+    manualFormError.innerHTML = message;
+    manualFormError.classList.remove('hidden');
+}
+
+function hideManualFormError() {
+    manualFormError?.classList.add('hidden');
+}
+
+function normalizeJobType(value) {
+    const text = String(value || '').toUpperCase().replace(/\s+/g, '').replace(/[–—]/g, '-');
+    if (text.includes('PROGRESSIVE') || text === 'PD' || text === 'P-D') return 'P-D';
+    if (text.includes('BIGSTAMPING') || text.includes('LARGESTAMPING') || text === 'LD' || text === 'L-D') return 'L-D';
+    if (text.includes('SMALLSTAMPING') || text === 'SD' || text === 'S-D') return 'S-D';
+    return 'P-D';
+}
+
+function formatJobTypeLabel(type) {
+    const normalized = normalizeJobType(type);
+    return JOB_TYPE_LABELS[normalized] || normalized;
 }
 
 function createCameraJob(scanPayload) {
