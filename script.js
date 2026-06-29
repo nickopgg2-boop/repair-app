@@ -242,7 +242,12 @@ function showCameraChoiceState(message) {
 
 async function ensureCameraFeature() {
     if (!cameraFeaturePromise) {
-        cameraFeaturePromise = import('./features/camera-ocr.js').then(module => {
+        cameraFeaturePromise = new Promise((resolve, reject) => {
+            if (!window.CameraOCRFeature) {
+                reject(new Error('ไม่พบไฟล์ features/camera-ocr.js กรุณาอัปโหลดไฟล์ในโฟลเดอร์ features ให้ครบ'));
+                return;
+            }
+            const module = window.CameraOCRFeature;
             module.initCameraOcrFeature({
                 app: window.maintenanceApp,
                 openCamera: () => cameraInput.click(),
@@ -269,7 +274,7 @@ async function ensureCameraFeature() {
                     parsedForm: document.getElementById('parsed-form')
                 }
             });
-            return module;
+            resolve(module);
         });
     }
     return cameraFeaturePromise;

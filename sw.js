@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'die-maintenance-pwa-v2-camera-ocr';
+const CACHE_VERSION = 'die-maintenance-pwa-v3-no-module-ocr';
 const APP_SHELL = [
     './',
     './index.html',

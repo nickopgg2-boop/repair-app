@@ -41,7 +41,7 @@ let cvLoadingPromise = null;
 let tessLoadingPromise = null;
 let currentScan = null;
 
-export function initCameraOcrFeature(options) {
+function initCameraOcrFeature(options) {
     config = options;
     if (initialized) return;
     initialized = true;
@@ -60,7 +60,7 @@ export function initCameraOcrFeature(options) {
 }
 
 
-export function openImageSourceChoice() {
+function openImageSourceChoice() {
     if (!config) return;
     resetScannerUi();
     showModal();
@@ -72,7 +72,7 @@ export function openImageSourceChoice() {
     config.elements.createButton.classList.add('hidden');
 }
 
-export async function handleImageFile(file, source = 'camera') {
+async function handleImageFile(file, source = 'camera') {
     if (!config) throw new Error('Camera OCR feature has not been initialized.');
 
     resetScannerUi();
@@ -950,3 +950,10 @@ function levenshteinDistance(a, b) {
     }
     return matrix[a.length][b.length];
 }
+
+
+window.CameraOCRFeature = {
+    initCameraOcrFeature,
+    openImageSourceChoice,
+    handleImageFile
+};
