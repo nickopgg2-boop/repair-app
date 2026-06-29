@@ -43,6 +43,18 @@
                     <span class="dash-title">เสร็จสิ้น</span>
                 </div>
             </div>
+            <div class="dash-card card-camera" id="camera-dashboard-card">
+                <div class="dash-icon">📷</div>
+                <div class="dash-info camera-dash-info">
+                    <span class="dash-title">งานจากการถ่ายรูป</span>
+                    <span class="dash-number" id="count-camera">0</span>
+                    <div class="camera-stats">
+                        <span>สำเร็จ <b id="count-ocr-success">0</b></span>
+                        <span>ผิดพลาด <b id="count-ocr-failed">0</b></span>
+                        <span>เฉลี่ย <b id="avg-confidence">0%</b></span>
+                    </div>
+                </div>
+            </div>
         </section>
 
         <!-- Job List -->
@@ -58,10 +70,18 @@
 
     <!-- Floating Bottom Bar (Glassmorphism) -->
     <div class="bottom-bar">
-        <button id="btn-open-modal" class="btn-primary btn-pill">
-            <span class="icon">➕</span> สร้างใบงานใหม่
-        </button>
+        <div class="bottom-actions">
+            <button id="btn-open-modal" class="btn-primary btn-pill">
+                <span class="icon">➕</span> สร้างใบงานใหม่
+            </button>
+            <button id="btn-create-from-photo" class="btn-camera btn-pill">
+                <span class="icon">📷</span> สร้างงานจากรูป
+            </button>
+        </div>
     </div>
+
+    <input id="camera-input" class="visually-hidden" type="file" accept="image/*" capture="environment">
+    <input id="gallery-input" class="visually-hidden" type="file" accept="image/*">
 
     <!-- Popup Modal สไตล์โมเดิร์น -->
     <div id="modal" class="modal hidden">
@@ -81,6 +101,111 @@
             <div class="modal-actions">
                 <button id="btn-close-modal" class="btn-secondary btn-pill">ยกเลิก</button>
                 <button id="btn-save-job" class="btn-primary btn-pill">บันทึกงาน</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI OCR Preview / Auto Fill Modal -->
+    <div id="ocr-modal" class="modal ocr-modal hidden" aria-live="polite">
+        <div class="modal-backdrop" id="ocr-modal-backdrop"></div>
+        <div class="modal-content ocr-modal-content">
+            <div class="modal-drag-indicator"></div>
+            <div class="ocr-title-row">
+                <div>
+                    <h2>สร้างใบงานจากรูป</h2>
+                    <p class="modal-subtitle" id="ocr-status-text">ถ่ายภาพใบแจ้งซ่อม หรือเลือกภาพจาก Gallery</p>
+                </div>
+                <button id="btn-close-ocr-modal" class="ocr-icon-button" type="button" aria-label="ปิด">✕</button>
+            </div>
+
+            <div class="scan-progress-block" id="scan-progress-block">
+                <div class="scan-animation" id="scan-animation">
+                    <div class="scan-line"></div>
+                    <span>Scanning...</span>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-fill" id="ocr-progress-fill"></div>
+                </div>
+                <p class="progress-text" id="ocr-progress-text">กำลังเตรียมระบบ OCR</p>
+            </div>
+
+            <div id="ocr-error" class="ocr-error hidden"></div>
+
+            <div class="ocr-preview-grid hidden" id="ocr-preview-grid">
+                <div class="preview-card">
+                    <div class="preview-card-title">รูปต้นฉบับ</div>
+                    <img id="original-preview" alt="รูปต้นฉบับจากกล้อง">
+                </div>
+                <div class="preview-card">
+                    <div class="preview-card-title">รูปหลังปรับภาพ</div>
+                    <img id="processed-preview" alt="รูปหลังประมวลผลด้วย OpenCV">
+                </div>
+            </div>
+
+            <div class="ocr-section hidden" id="ocr-text-section">
+                <div class="ocr-section-title">ข้อความ OCR</div>
+                <textarea id="ocr-text-output" class="ocr-textarea" readonly></textarea>
+            </div>
+
+            <div class="ocr-section hidden" id="parsed-section">
+                <div class="ocr-section-title">ข้อมูลที่ AI วิเคราะห์</div>
+                <div class="auto-fill-form" id="parsed-form">
+                    <label>PART NAME
+                        <input id="parsed-partName" class="modern-input parsed-input" data-field="partName" autocomplete="off">
+                        <span id="confidence-partName" class="confidence-chip"></span>
+                    </label>
+                    <label>PART NO
+                        <input id="parsed-partNumber" class="modern-input parsed-input" data-field="partNumber" autocomplete="off">
+                        <span id="confidence-partNumber" class="confidence-chip"></span>
+                    </label>
+                    <label>MODEL
+                        <input id="parsed-model" class="modern-input parsed-input" data-field="model" autocomplete="off">
+                        <span id="confidence-model" class="confidence-chip"></span>
+                    </label>
+                    <label>ปัญหา / สาเหตุ
+                        <textarea id="parsed-problem" class="modern-input parsed-input parsed-textarea" data-field="problem"></textarea>
+                        <span id="confidence-problem" class="confidence-chip"></span>
+                    </label>
+                    <label>Stock
+                        <input id="parsed-stock" class="modern-input parsed-input" data-field="stock" autocomplete="off">
+                        <span id="confidence-stock" class="confidence-chip"></span>
+                    </label>
+                    <label>Priority
+                        <select id="parsed-priority" class="modern-input parsed-input" data-field="priority">
+                            <option value="">ไม่พบข้อมูล</option>
+                            <option value="S-D">S-D</option>
+                            <option value="L-D">L-D</option>
+                            <option value="P-D">P-D</option>
+                        </select>
+                        <span id="confidence-priority" class="confidence-chip"></span>
+                    </label>
+                    <label>PRD
+                        <input id="parsed-prd" class="modern-input parsed-input" data-field="prd" autocomplete="off">
+                        <span id="confidence-prd" class="confidence-chip"></span>
+                    </label>
+                    <label>QA
+                        <input id="parsed-qa" class="modern-input parsed-input" data-field="qa" autocomplete="off">
+                        <span id="confidence-qa" class="confidence-chip"></span>
+                    </label>
+                    <label>PCC
+                        <input id="parsed-pcc" class="modern-input parsed-input" data-field="pcc" autocomplete="off">
+                        <span id="confidence-pcc" class="confidence-chip"></span>
+                    </label>
+                    <label>Cover D
+                        <input id="parsed-coverD" class="modern-input parsed-input" data-field="coverD" autocomplete="off">
+                        <span id="confidence-coverD" class="confidence-chip"></span>
+                    </label>
+                    <label>FG
+                        <input id="parsed-fg" class="modern-input parsed-input" data-field="fg" autocomplete="off">
+                        <span id="confidence-fg" class="confidence-chip"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="modal-actions ocr-actions">
+                <button id="btn-gallery" class="btn-secondary btn-pill" type="button">เลือกจาก Gallery</button>
+                <button id="btn-retake" class="btn-secondary btn-pill hidden" type="button">ถ่ายใหม่</button>
+                <button id="btn-create-ocr-job" class="btn-primary btn-pill hidden" type="button">สร้างใบงาน</button>
             </div>
         </div>
     </div>
