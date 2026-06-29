@@ -13,7 +13,10 @@ const TESSERACT_URLS = [
 const TESSERACT_OPTIONS = {
     workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
     corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5/tesseract-core-simd.wasm.js',
-    langPath: 'https://tessdata.projectnaptha.com/4.0.0'
+    langPath: 'https://tessdata.projectnaptha.com/4.0.0',
+    tessedit_pageseg_mode: '6',
+    preserve_interword_spaces: '1',
+    user_defined_dpi: '300'
 };
 
 const FIELD_ORDER = [
@@ -674,7 +677,7 @@ function normalizeOcrText(text) {
 
 function parseSummitTemporaryDieMaintenanceForm(ocrText, ocrWords = []) {
     const layoutLines = buildLayoutLinesFromWords(ocrWords);
-    const lines = layoutLines.length ? layoutLines.map(line => line.text) : ocrText.split('\n').map(line => line.trim()).filter(Boolean);
+    const lines = repairOcrLines(layoutLines.length ? layoutLines.map(line => line.text) : ocrText.split('\n').map(line => line.trim()).filter(Boolean));
     const normalizedText = normalizeForSearch(ocrText);
     const data = {};
     const confidence = {};
@@ -700,6 +703,10 @@ function parseSummitTemporaryDieMaintenanceForm(ocrText, ocrWords = []) {
         } else {
             data[field] = extractValueByAliases(lines, aliases);
         }
+        const directValue = extractByTemplateRegex(ocrText, field);
+        if (directValue && (!data[field] || directValue.length > data[field].length)) {
+            data[field] = directValue;
+        }
         confidence[field] = scoreExtractedValue(field, data[field], lines, aliases, layoutLines);
     });
 
@@ -714,13 +721,51 @@ function parseSummitTemporaryDieMaintenanceForm(ocrText, ocrWords = []) {
     return { data, confidence, overallConfidence };
 }
 
+
+function repairOcrLines(lines) {
+    return lines
+        .map(line => String(line || '')
+            .replace(/[|]/g, 'I')
+            .replace(/B[1I]G\s*STAM(P|F)[I1]NG/gi, 'BIG STAMPING')
+            .replace(/SM[A4]LL\s*STAM(P|F)[I1]NG/gi, 'SMALL STAMPING')
+            .replace(/PROGRESS[1I]VE/gi, 'PROGRESSIVE')
+            .replace(/P[ \-.]*D\b/gi, 'P-D')
+            .replace(/S[ \-.]*D\b/gi, 'S-D')
+            .replace(/L[ \-.]*D\b/gi, 'L-D')
+            .trim())
+        .filter(Boolean);
+}
+
+function extractByTemplateRegex(text, field) {
+    const normalized = normalizeOcrText(text);
+    const patterns = {
+        partName: /PART\s*NAME[^:\n]*[:：]?\s*([^\n]{3,80})/i,
+        model: /MODEL[^:\n]*[:：]?\s*([^\n]{2,60})/i,
+        problem: /(ปัญหา\s*\/\s*สาเหตุ|ปัญหา|สาเหตุ)[^:\n]*[:：]?\s*([^\n]{2,120})/i,
+        stock: /Stock\s*([^\n]{0,40})/i,
+        prd: /\bPRD\b\s*([^\n]{0,40})/i,
+        qa: /\bQA\b\s*([^\n]{0,40})/i,
+        pcc: /\bPCC\b\s*([^\n]{0,40})/i,
+        coverD: /Cover\s*D\s*([^\n]{0,40})/i,
+        fg: /\bFG\b\s*([^\n]{0,40})/i
+    };
+    const pattern = patterns[field];
+    if (!pattern) return '';
+    const match = normalized.match(pattern);
+    if (!match) return '';
+    const value = cleanupFieldValue(match[2] || match[1] || '');
+    if (field === 'partName') return value.replace(/\bPART\s*NO\b.*$/i, '').trim();
+    if (field === 'model') return value.replace(/^(รุ่น|MODEL)\s*[:：]?/i, '').trim();
+    return value;
+}
+
 function detectPartNumber(text, lines) {
     const combinedByLineBreak = text.match(/\b(\d{5,8})\s*\n\s*(\d{3,6}[-–—]?\d{0,3})\b/);
-    if (combinedByLineBreak) return `${combinedByLineBreak[1]}${combinedByLineBreak[2].replace(/[–—]/g, '-')}`;
+    if (combinedByLineBreak) return normalizePartNumberCandidate(`${combinedByLineBreak[1]}${combinedByLineBreak[2]}`);
 
     const labeledValue = extractValueByAliases(lines, ['PART NO', 'PART NO.', 'PART NUMBER', 'PARTNO', 'PART #', 'P/NO']);
     if (labeledValue) {
-        const cleaned = labeledValue.replace(/\s+/g, '').replace(/[–—]/g, '-');
+        const cleaned = normalizePartNumberCandidate(labeledValue);
         if (/[A-Z0-9]{4,}/i.test(cleaned)) return cleaned;
     }
 
@@ -728,12 +773,22 @@ function detectPartNumber(text, lines) {
         const current = lines[index].replace(/\s/g, '');
         const next = lines[index + 1].replace(/\s/g, '').replace(/[–—]/g, '-');
         if (/^\d{5,8}$/.test(current) && /^\d{3,6}-?\d{0,3}$/.test(next)) {
-            return `${current}${next}`;
+            return normalizePartNumberCandidate(`${current}${next}`);
         }
     }
 
     const inline = text.replace(/\s+/g, ' ').match(/\b(?=[A-Z0-9–—-]*\d)([A-Z0-9]{4,}[-–—]?[A-Z0-9]{1,})\b/i);
-    return inline ? inline[1].replace(/[–—]/g, '-') : '';
+    return inline ? normalizePartNumberCandidate(inline[1]) : '';
+}
+
+function normalizePartNumberCandidate(value) {
+    return String(value || '')
+        .replace(/[Oo]/g, '0')
+        .replace(/[Il|]/g, '1')
+        .replace(/[Ss]/g, '5')
+        .replace(/[–—]/g, '-')
+        .replace(/[^A-Z0-9-]/gi, '')
+        .trim();
 }
 
 function scorePartNumber(value, text) {
@@ -819,14 +874,15 @@ function normalizePriority(rawValue, fullText) {
     if (/SMALL\s*STAMPING|\bSD\b|S\s*[-]?\s*D|STANDARD/.test(raw.toUpperCase()) || canonical.includes('SD')) {
         return { value: 'S-D', confidence: 96 };
     }
-    if (/LARGE\s*STAMPING|\bLD\b|L\s*[-]?\s*D|LEVEL/.test(raw.toUpperCase()) || canonical.includes('LD')) {
+    if (/LARGE\s*STAMPING|BIG\s*STAMPING|\bLD\b|L\s*[-]?\s*D|LEVEL/.test(raw.toUpperCase()) || canonical.includes('LD') || canonical.includes('BIGSTAMPING')) {
         return { value: 'L-D', confidence: 96 };
     }
 
     const fuzzyCandidates = [
         { needle: 'PROGRESSIVE', value: 'P-D' },
         { needle: 'SMALLSTAMPING', value: 'S-D' },
-        { needle: 'LARGESTAMPING', value: 'L-D' }
+        { needle: 'LARGESTAMPING', value: 'L-D' },
+        { needle: 'BIGSTAMPING', value: 'L-D' }
     ];
     const best = fuzzyCandidates.reduce((candidate, item) => {
         const score = similarity(canonical, item.needle);
@@ -847,7 +903,10 @@ function looksLikeAnyKnownLabel(line) {
 function cleanupFieldValue(value) {
     return String(value || '')
         .replace(/^[\s:：\-–—=]+/, '')
+        .replace(/^\([^)]{0,40}\)\s*[:：\-–—=]*/u, '')
+        .replace(/^(ชื่อชิ้นงาน|หมายเลขชิ้นงาน|รุ่น|ปัญหา\s*\/\s*สาเหตุ|ปัญหา|สาเหตุ)\s*[:：\-–—=]*/u, '')
         .replace(/[☐□■▪]+/g, '')
+        .replace(/[＿_]{2,}/g, ' ')
         .replace(/\s{2,}/g, ' ')
         .trim();
 }
