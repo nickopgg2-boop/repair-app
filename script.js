@@ -151,16 +151,10 @@ function initCameraEntryPoints() {
     if (!btnCreateFromPhoto || !cameraInput || !galleryInput) return;
 
     btnCreateFromPhoto.addEventListener('click', () => {
+        // Open a visible OCR sheet immediately, then trigger the native camera picker.
+        // This prevents the app from appearing idle while Android/iOS returns from camera.
+        showCameraOpeningState();
         awaitingCameraSelection = true;
-        const handleFocusBack = () => {
-            window.setTimeout(async () => {
-                if (!awaitingCameraSelection) return;
-                awaitingCameraSelection = false;
-                const feature = await ensureCameraFeature();
-                feature.openImageSourceChoice();
-            }, 500);
-        };
-        window.addEventListener('focus', handleFocusBack, { once: true });
         cameraInput.click();
     });
 
@@ -168,18 +162,82 @@ function initCameraEntryPoints() {
         awaitingCameraSelection = false;
         const file = cameraInput.files?.[0];
         cameraInput.value = '';
-        if (!file) return;
-        const feature = await ensureCameraFeature();
-        feature.handleImageFile(file, 'camera');
+        if (!file) {
+            showCameraChoiceState('ยังไม่ได้เลือกรูปภาพ สามารถถ่ายใหม่หรือเลือกภาพจาก Gallery ได้');
+            return;
+        }
+
+        try {
+            const feature = await ensureCameraFeature();
+            await feature.handleImageFile(file, 'camera');
+        } catch (error) {
+            showCameraChoiceState(error.message || 'ไม่สามารถเริ่มระบบ OCR ได้');
+            registerOcrFailure();
+        }
     });
 
     galleryInput.addEventListener('change', async () => {
         const file = galleryInput.files?.[0];
         galleryInput.value = '';
         if (!file) return;
-        const feature = await ensureCameraFeature();
-        feature.handleImageFile(file, 'gallery');
+
+        try {
+            const feature = await ensureCameraFeature();
+            await feature.handleImageFile(file, 'gallery');
+        } catch (error) {
+            showCameraChoiceState(error.message || 'ไม่สามารถเริ่มระบบ OCR ได้');
+            registerOcrFailure();
+        }
     });
+}
+
+function showCameraOpeningState() {
+    const ocrModal = document.getElementById('ocr-modal');
+    const statusText = document.getElementById('ocr-status-text');
+    const progressBlock = document.getElementById('scan-progress-block');
+    const progressFill = document.getElementById('ocr-progress-fill');
+    const progressText = document.getElementById('ocr-progress-text');
+    const scanAnimation = document.getElementById('scan-animation');
+    const errorBox = document.getElementById('ocr-error');
+    const previewGrid = document.getElementById('ocr-preview-grid');
+    const ocrTextSection = document.getElementById('ocr-text-section');
+    const parsedSection = document.getElementById('parsed-section');
+    const createButton = document.getElementById('btn-create-ocr-job');
+    const retakeButton = document.getElementById('btn-retake');
+
+    ocrModal?.classList.remove('hidden');
+    statusText.textContent = 'กำลังเปิดกล้อง กรุณาถ่ายรูปใบแจ้งซ่อม';
+    progressBlock?.classList.remove('hidden');
+    if (progressFill) progressFill.style.width = '4%';
+    if (progressText) progressText.textContent = 'Opening Camera... 4%';
+    const animationLabel = scanAnimation?.querySelector('span');
+    if (animationLabel) animationLabel.textContent = 'Opening Camera...';
+    scanAnimation?.classList.remove('success');
+    errorBox?.classList.add('hidden');
+    previewGrid?.classList.add('hidden');
+    ocrTextSection?.classList.add('hidden');
+    parsedSection?.classList.add('hidden');
+    createButton?.classList.add('hidden');
+    retakeButton?.classList.add('hidden');
+}
+
+function showCameraChoiceState(message) {
+    const ocrModal = document.getElementById('ocr-modal');
+    const statusText = document.getElementById('ocr-status-text');
+    const progressBlock = document.getElementById('scan-progress-block');
+    const errorBox = document.getElementById('ocr-error');
+    const retakeButton = document.getElementById('btn-retake');
+    const createButton = document.getElementById('btn-create-ocr-job');
+
+    ocrModal?.classList.remove('hidden');
+    statusText.textContent = 'เลือกแหล่งรูปภาพ';
+    progressBlock?.classList.add('hidden');
+    if (errorBox) {
+        errorBox.textContent = message;
+        errorBox.classList.remove('hidden');
+    }
+    retakeButton?.classList.remove('hidden');
+    createButton?.classList.add('hidden');
 }
 
 async function ensureCameraFeature() {
